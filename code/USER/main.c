@@ -12,6 +12,8 @@
 
 #include "self_stm32f10x.h"
 
+uint8_t count = 0;
+
 int main(void)
 {
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
@@ -29,16 +31,12 @@ int main(void)
 	OLED12864_Init();
 	DS18B20_Init();
 
-	uint8_t count = 0;
-
 	while(1)
 	{
 		char temp[60];
 		hard_delay_ms(200);
 		OLED12864_Clear_PageBlock(0,0,64);
 		sprintf(temp,"KeyInput:%d",count);
-		if(Read_List_Key() != 0)
-			count++;
 		OLED12864_Show_String(0,0,temp,1);
 		OLED12864_Refresh();
 		#if 0

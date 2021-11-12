@@ -5,13 +5,15 @@
 
 //移植时注意更改中断源配置
 //200ms采集比较合适
-#define KEY_IRQn            0   //开启中断
+#define KEY_IRQn            1   //开启中断
+#define KEY_DEBOUNCE        1   //软件消抖
+#define KEY_TIME_DE         240 //软件消抖时间(ms)
 
 #include "bsp_led.h"
 
-#define KEY0_IRQn() LED_Reversal()
-#define KEY1_IRQn() LED_Reversal()
-#define KEY2_IRQn() LED_Reversal()
+#define KEY0_IRQn() LED_Reversal();count++
+#define KEY1_IRQn() LED_Reversal();count++
+#define KEY2_IRQn() LED_Reversal();count++
 
 const static Pin Key[3] =
 {
