@@ -6,10 +6,11 @@
 
 static Pin LED = {GPIO_Pin_12,GPIOB};
 
-#define LED_ON()    Pin_Set(LED)
-#define LED_OFF()   Pin_Reset(LED)
-#define LED_Reversal()  Pin_Reversal(LED)
+#define LED_ON()    Pin_Set(LED)            //点亮LED
+#define LED_OFF()   Pin_Reset(LED)          //关闭LED
+#define LED_Reversal()  Pin_Reversal(LED)   //LED翻转
 
+//初始化LED 默认不点亮LED
 void BSP_LED_Init(void);
 
 #endif

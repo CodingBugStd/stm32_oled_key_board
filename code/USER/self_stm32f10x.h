@@ -16,6 +16,7 @@
  * last date: 2021/10/16
 **************************************************************************************/
 
+//用于快速初始化IO口以及操作IO口
 typedef struct
 {
     uint16_t bit;           //Pin的标号
@@ -31,7 +32,5 @@ void soft_delay_us(uint16_t us);
 
 void startDebugTiming(void);         //开始计时
 uint16_t endDebugTiming(void);       //结束计时 返回计时时长 us
-
-void SysTick_Handler(void);
 
 #endif
