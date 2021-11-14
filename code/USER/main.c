@@ -8,43 +8,42 @@
 #include "bsp_key.h"
 
 #include "oled12864.h"
+#include "w25_flash.h"
 #include "ds18b20.h"
 
 #include "self_stm32f10x.h"
 
-uint8_t count = 0;
-
 int main(void)
 {
+	//设置中断分组 4位主优先级 0位子优先级
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
 
-	//关闭JTAG,只保留SWD调试接口
+	//关闭JTAG调试接口,只保留SWD调试接口
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO,ENABLE);
 	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable,ENABLE);
 
-	BSP_SPI_Init();
-	BSP_LED_Init();
-	BSP_Usart_Init();
-	BSP_HardDelay_Init();
-	BSP_Key_Init();
+	BSP_HardDelay_Init();	//硬件延时初始化
+	BSP_Usart_Init();		//串口初始化
+	BSP_SPI_Init();			//硬件SPI初始化
+	BSP_Key_Init();			//按键初始化
+	BSP_LED_Init();			//LED指示灯初始化
 
-	OLED12864_Init();
-	DS18B20_Init();
+	OLED12864_Init();		//OLED初始化			需要SPI支持
+	if(W25_Flash_Init())	//W25Q64外扩FLASH初始化	需要SPI支持
+	{
+		printf("ex flash w25q64 is Err\r\n");
+		OLED12864_Show_String(0,0,"Ex flash Err",1);
+	}else
+	{
+		printf("ex flash w25q64 is Pass\r\n");
+		OLED12864_Show_String(0,0,"Ex flash Pass",1);
+	}
+
+	OLED12864_Refresh();
 
 	while(1)
 	{
-		char temp[60];
-		hard_delay_ms(200);
-		OLED12864_Clear_PageBlock(0,0,64);
-		sprintf(temp,"KeyInput:%d",count);
-		OLED12864_Show_String(0,0,temp,1);
-		OLED12864_Refresh();
-		#if 0
-		OLED12864_Show_Num(0,0,num,1);
-		OLED12864_Refresh();
-		hard_delay_ms(1000);
 		LED_Reversal();
-		num++;
-		#endif
+		hard_delay_ms(1000);
 	}
 }

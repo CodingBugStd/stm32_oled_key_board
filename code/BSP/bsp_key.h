@@ -11,9 +11,9 @@
 
 #include "bsp_led.h"
 
-#define KEY0_IRQn() LED_Reversal();count++
-#define KEY1_IRQn() LED_Reversal();count++
-#define KEY2_IRQn() LED_Reversal();count++
+#define KEY0_IRQn() LED_Reversal()
+#define KEY1_IRQn() LED_Reversal()
+#define KEY2_IRQn() LED_Reversal()
 
 const static Pin Key[3] =
 {

@@ -4,7 +4,7 @@ void BSP_SPI_Init(void)
 {
     SPI_GPIO_Config();
     SPI_Config();
-}   
+}  
 
 void SPI_GPIO_Config(void)
 {
@@ -12,15 +12,26 @@ void SPI_GPIO_Config(void)
 
     SPI_Pin_CLK_Init();
 
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF_PP;
     GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
-    //SPI1的初始化放到外部去了!所以temp=2;
-    for(uint8_t temp = 2;temp<SPI_Pin_Count;temp++)
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF_PP;
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_7 | GPIO_Pin_5; //SPI1 SCK MOSI
+    GPIO_Init(GPIOA,&GPIO_InitStruct);
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_13 | GPIO_Pin_15;   //SPI2 SCK MOSI
+    GPIO_Init(GPIOB,&GPIO_InitStruct);
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_6;  //SPI1 MISO
+    GPIO_Init(GPIOA,&GPIO_InitStruct);
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_14;  //SPI2 MISO
+    GPIO_Init(GPIOB,&GPIO_InitStruct);
+
+    #if 0
+    for(uint8_t temp = 0;temp<SPI_Pin_Count;temp++)
     {
         GPIO_InitStruct.GPIO_Pin = SPI_Pin[temp].bit;
         GPIO_Init(SPI_Pin[temp].port,&GPIO_InitStruct);
         GPIO_SetBits(SPI_Pin[temp].port,SPI_Pin[temp].bit);
     }
+    #endif
 }
 
 void SPI_Config(void)
@@ -29,10 +40,9 @@ void SPI_Config(void)
 
     SPI_CLK_Init();
 
-    #if 0   //使用外部的nRF24L01库完成SPI1的初始化
-    SPI_InitStruct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_32;
-    SPI_InitStruct.SPI_CPHA = SPI_CPHA_1Edge;
-    SPI_InitStruct.SPI_CPOL = SPI_CPOL_Low;
+    SPI_InitStruct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_2;
+    SPI_InitStruct.SPI_CPHA = SPI_CPHA_2Edge;
+    SPI_InitStruct.SPI_CPOL = SPI_CPOL_High;
     SPI_InitStruct.SPI_CRCPolynomial = 7;
     SPI_InitStruct.SPI_DataSize = SPI_DataSize_8b;
     SPI_InitStruct.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
@@ -42,7 +52,6 @@ void SPI_Config(void)
 
     SPI_Init(SPI1,&SPI_InitStruct);
     //SPI_CalculateCRC(SPI1,DISABLE);     //关闭CRC校验
-    #endif
 
     SPI_InitStruct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_2;
     SPI_InitStruct.SPI_CPHA = SPI_CPHA_2Edge;
@@ -57,9 +66,9 @@ void SPI_Config(void)
     SPI_Init(SPI2,&SPI_InitStruct);
     SPI_CalculateCRC(SPI2,DISABLE);     //关闭CRC校验
 
-    //SPI_Cmd(SPI1,ENABLE);
+    SPI_Cmd(SPI1,ENABLE);
     SPI_Cmd(SPI2,ENABLE);
-    //SPI_Replace_Byte(1,0xff);
+    SPI_Replace_Byte(1,0xff);
     SPI_Replace_Byte(2,0xff);
 }
 

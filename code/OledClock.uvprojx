@@ -514,9 +514,9 @@
               <FilePath>.\HARDWARE\ds18b20.c</FilePath>
             </File>
             <File>
-              <FileName>w25q16.c</FileName>
+              <FileName>w25_flash.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\HARDWARE\w25q16.c</FilePath>
+              <FilePath>.\HARDWARE\w25_flash.c</FilePath>
             </File>
           </Files>
         </Group>
