@@ -1,55 +1,198 @@
 #include "ds18b20.h"
-#include "bsp_hard_delay.h"
+#include "oled12864.h"
 
 static void PinToFloat(void);
-static void PinToOutOD(void);
+static void PinToOutPP(void);
 
-void DS18B20_Init(void)
-{
-    //引脚初始化
-    GPIO_InitTypeDef    GPIO_InitStruct;
-
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB,ENABLE);
-
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_OD;
-    GPIO_InitStruct.GPIO_Pin = DQ.bit;
-    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
-
-    GPIO_Init(DQ.port,&GPIO_InitStruct);
-
-}
-
-void DS18B20_Reset(void)
-{
-    PinToOutOD();
-    Pin_Reset(DQ);
-    //hard_delay_us(500);
-    Pin_Set(DQ);
-    //hard_delay_us(15);
-}
-
+/*******************************************************************
+ * 功能:内部函数 设置DQ引脚为浮空输入
+ * 参数:无
+ * 返回值:无
+ * 2021/10/16   庞碧璋
+ *******************************************************************/
 void PinToFloat(void)
 {
-    //清空 MODE5[1:0] 和 CNF5[1:0]
-    DQ.port->CRL &= ~((uint32_t)0x0f<<20);
-    //CNF5[1:0] = 01
-    //MODE5[1:0] = 00
-    //即 GPIOB的CRL[23:22:21:20] = 0100
-    DQ.port->CRL |= (uint32_t)0x04<<20;
+    DQ.port->CRL &= ~((uint32_t)0x0F<<20);  //CNF5 和 MODE5 清0
+    DQ.port->CRL |= (uint32_t)0x04<<20;     //配置CNF5 和 MODE5 为 0100
 }
 
-void PinToOutOD(void)
+/*******************************************************************
+ * 功能:内部函数 设置DQ引脚为推挽输出
+ * 参数:无
+ * 返回值:无
+ * 2021/10/16   庞碧璋
+ *******************************************************************/
+void PinToOutPP(void)
 {
-    //清空 MODE5[1:0] 和 CNF5[1:0]
-    DQ.port->CRL &= ~((uint32_t)0x0f<<20);
-    //CNF5[1:0] = 10
-    //MODE5[1:0] = 01
-    //即 GPIOB的CRL[23:22:21:20] = 1001
-    DQ.port->CRL |= (uint32_t)0x09<<20;
+    DQ.port->CRL &= ~((uint32_t)0x0F<<20);  //CNF5 和 MODE5 清0
+    DQ.port->CRL |= (uint32_t)0x03<<20;     //配置CNF5 和 MODE5 为 0011
 }
+ 
+/*******************************************************************
+ * 功能:初始化DS18B20
+ * 参数:无
+ * 返回值:
+ *  0  DS18B20设备正常
+ *  1  DS18B20设备响应复位信号失败
+ *  2  DS18B20设备释放总线失败
+ * 来源:csdn xiaohai@Linux
+ * 2021/10/16   庞碧璋
+ *******************************************************************/
+uint8_t DS18B20_Init(void)
+{
+	//初始化DQ引脚
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB,ENABLE);
+	PinToOutPP();
+	
+    return DS18B20_CheckDevice();  //设备检查
+}
+ 
+ /*******************************************************************
+ * 功能:向DS18B20发送一个复位信号
+ * 参数:无
+ * 返回值:无
+ * 来源:csdn xiaohai@Linux
+ * 2021/10/16   庞碧璋
+ *******************************************************************/
+void DS18B20_SendRestSingle(void)
+{
+	/*主机发送复位信号*/
+	PinToOutPP();
+	DQ_RESET; //拉低总线480~960 us ，对 DS18B20 芯片进行复位
+	DQ_Delay_us(750);
+	DQ_SET;
+	DQ_Delay_us(15);         //释放总线15~60 us
+}
+ 
+ /*******************************************************************
+ * 功能:检测DS18B20存在脉冲
+ * 参数:无
+ * 返回值:
+ *  0  DS18B20设备正常
+ *  1  DS18B20设备响应复位信号失败
+ *  2  DS18B20设备释放总线失败
+ * 来源:csdn xiaohai@Linux
+ * 2021/10/16   庞碧璋
+ *******************************************************************/
+u8 DS18B20_CheckReadySingle(void)
+{
+	u8 cnt=0;
+	/*1.检测存在脉冲*/
+	PinToFloat();
+	while( (Pin_Read(DQ)==1) && cnt < 240) //等待DS18B20 拉低总线 （60~240 us 响应复位信号）
+	{
+		DQ_Delay_us(1);
+		cnt++;
+	}
+	if(cnt>240) return 1;
+	/*2.检测DS18B20是否释放总线*/	
+	cnt=0;
+	PinToFloat();
+	while( (Pin_Read(DQ)!=1) && cnt<240)  //判断DS18B20是否释放总线（60~240 us 响应复位信号之后会释放总线）
+	{
+		DQ_Delay_us(1);
+		cnt++;
+	}
+	if(cnt>240)	return 2;
+	else return 0;
+}
+ 
 
-uint8_t DS18B20_Read_Bit(void)
+ /*******************************************************************
+ * 功能:检测DS18B20设备是否正常
+ * 参数:无
+ * 返回值:
+ *  0  DS18B20设备正常
+ *  1  DS18B20设备响应复位信号失败
+ *  2  DS18B20设备释放总线失败
+ * 来源:csdn xiaohai@Linux
+ * 2021/10/16   庞碧璋
+ *******************************************************************/
+u8 DS18B20_CheckDevice(void)
 {
-    PinToFloat();
-    return Pin_Read(DQ);
+	DS18B20_SendRestSingle();/*1.主机发送复位信号*/
+	return DS18B20_CheckReadySingle();/*2.检测存在脉冲*/
 }
+ 
+/*******************************************************************
+ * 功能:发送一个字节到ds18b20
+ * 参数:数据
+ * 返回值:无
+ * 来源:csdn xiaohai@Linux
+ * 2021/10/16   庞碧璋
+ *******************************************************************/
+u8 BS18B20_WriteByte(u8 cmd)
+{
+	u8 i=0;
+	PinToOutPP();
+	for(i=0;i<8;i++)
+	{
+        DQ_RESET;
+	    DQ_Delay_us(2);     //主机拉低总线写数据时间隙2us
+        if(cmd&0x01)        //如果该写入位为1，必须在15us之内把总线拉高，为0 保持60us即可。
+            DQ_SET;
+        else
+            DQ_RESET;
+		DQ_Delay_us(60);    //确保DS18B20已经成功读取到该位数据
+		DQ_SET;  //一位发送完成
+		cmd >>=1;
+		DQ_Delay_us(2);     //位间隙2us
+	}
+	return 0;
+}
+ 
+/*******************************************************************
+ * 功能:读取DS18B20一个字节
+ * 参数:无
+ * 返回值:读到的字节
+ * 来源:csdn xiaohai@Linux
+ * 2021/10/16   庞碧璋
+ *******************************************************************/
+u8 DS18B20_ReadByte(void)
+{
+	u8 i,data=0;
+	for(i=0;i<8;i++)
+	{
+		PinToOutPP();//初始化为输出模式
+		DQ_RESET;  
+		DQ_Delay_us(2);  //主机拉低总线读数据时间隙2us		
+		DQ_SET; //释放总线，准备读取位数据
+		PinToFloat(); //初始化为输入模式
+		DQ_Delay_us(10); //等待DS18B20的数据输出
+		data >>=1 ;  //高位补0，默认以0为准
+		if(Pin_Read(DQ)) data |=0x80;
+		DQ_Delay_us(60); //延时确保DS18B20采样周期已经过去（非常重要）
+		DQ_SET;  //释放总线准备读取下一位位数据
+	}
+	return data;
+}
+ 
+/*******************************************************************
+ * 功能:使用DS18B20测量温度
+ * 参数:无
+ * 返回值:当前温度
+ * 来源:csdn xiaohai@Linux
+ * 2021/10/16   庞碧璋
+ *******************************************************************/
+float DS18B20_GetTemperature(void)
+{
+	    u16 temp=0;
+		u8 temp_H,temp_L;
+	    DS18B20_CheckDevice();   //发送复位脉冲、检测存在脉冲
+		BS18B20_WriteByte(0xCC); //跳过ROM序列检测
+		BS18B20_WriteByte(0x44); //启动一次温度转换
+		
+		//等待温度转换完成
+		while(DS18B20_ReadByte()!=0xFF){}
+		
+		DS18B20_CheckDevice();   //发送复位脉冲、检测存在脉冲
+		BS18B20_WriteByte(0xCC); //跳过ROM序列检测
+		BS18B20_WriteByte(0xBE); //读取温度
+		
+		temp_L=DS18B20_ReadByte(); //读取的温度低位数据
+		temp_H=DS18B20_ReadByte(); //读取的温度高位数据
+		temp=temp_L|(temp_H<<8);   //合成温度
+
+		return (temp*6.25+5)/100;
+}
+ 

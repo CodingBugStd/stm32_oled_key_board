@@ -1,5 +1,10 @@
 #include "bsp_usart.h"
 
+static void USART_GPIO_Init(void);
+static void USART_Config(void);
+static void USART_NVIC_Config(void);
+static void USART_DMA_Config(void);
+
 /**************************************************************************
  * 功能:初始化串口
  * 参数:无

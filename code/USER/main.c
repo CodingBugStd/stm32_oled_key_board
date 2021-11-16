@@ -28,22 +28,20 @@ int main(void)
 	BSP_Key_Init();			//按键初始化
 	BSP_LED_Init();			//LED指示灯初始化
 
-	OLED12864_Init();		//OLED初始化			需要SPI支持
-	if(W25_Flash_Init())	//W25Q64外扩FLASH初始化	需要SPI支持
-	{
-		printf("ex flash w25q64 is Err\r\n");
-		OLED12864_Show_String(0,0,"Ex flash Err",1);
-	}else
-	{
-		printf("ex flash w25q64 is Pass\r\n");
-		OLED12864_Show_String(0,0,"Ex flash Pass",1);
-	}
-
+	char tmp[16];
+	OLED12864_Init();				//OLED初始化			需要SPI支持
+	tmp[0] = W25_Flash_Init();		//W25Q64外扩FLASH初始化	需要SPI支持
+	tmp[1] = DS18B20_Init();		//温度传感器初始化		需要硬件延时支持
+	if(tmp[0]==0 && tmp[1]==0)
+		OLED12864_Show_String(0,0,"Deviece Is Correct",1);
 	OLED12864_Refresh();
 
 	while(1)
 	{
+		sprintf(tmp,"Tmp:%.2f",DS18B20_GetTemperature());
+		OLED12864_Show_String(7,74,tmp,1);
+		OLED12864_Refresh();
 		LED_Reversal();
-		hard_delay_ms(1000);
+		hard_delay_ms(50);
 	}
 }

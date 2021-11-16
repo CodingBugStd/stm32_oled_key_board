@@ -34,10 +34,10 @@ static DMA_Channel_TypeDef* TargetDMA_Channel[3] = {DMA1_Channel4,DMA1_Channel7}
 
 //初始化
 void BSP_Usart_Init(void);
-void USART_GPIO_Init(void);
-void USART_Config(void);
-void USART_NVIC_Config(void);
-void USART_DMA_Config(void);
+//void USART_GPIO_Init(void);
+//void USART_Config(void);
+//void USART_NVIC_Config(void);
+//void USART_DMA_Config(void);
 
 //发送&接收
 uint8_t*Usart_Read(uint8_t USARTx);                             //读取串口接收缓存区,返回缓存区首地址,缓存区首地址为当前接收到的数据个数,不是数据!

@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "stm32f10x.h": "c",
-        "bsp_led.h": "c"
+        "bsp_led.h": "c",
+        "oled12864.h": "c"
     }
 }
