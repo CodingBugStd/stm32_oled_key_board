@@ -34,15 +34,12 @@ const static Pin W25Q16_Pin[3] =
 #define W25_32Block_Erase   0x52    //32KB块擦除
 #define W25_64Block_Erase   0xD8    //64KB块擦除
 #define W25_Chip_Erase      0xC7    //全片擦除
-#define W25_Sector_Erase    0x20    //扇区擦除
 #define W25_Read_SR1        0x05    //读状态寄存器1
 #define W25_Read_SR2        0x35    //读状态寄存器2
 #define W25_Read_SR3        0x15    //读状态寄存器3
 #define W25_Page_Write      0x02    //写数据
-#define W25_Release         0xAB    //唤醒
 
 uint8_t W25_Flash_Init(void);
-void W25_WakeUp(void);
 
 uint8_t Test(void);
 

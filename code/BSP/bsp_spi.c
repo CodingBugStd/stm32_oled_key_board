@@ -51,7 +51,7 @@ void SPI_Config(void)
     SPI_InitStruct.SPI_NSS = SPI_NSS_Soft;  
 
     SPI_Init(SPI1,&SPI_InitStruct);
-    //SPI_CalculateCRC(SPI1,DISABLE);     //关闭CRC校验
+    SPI_CalculateCRC(SPI1,DISABLE);     //关闭CRC校验
 
     SPI_InitStruct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_2;
     SPI_InitStruct.SPI_CPHA = SPI_CPHA_2Edge;

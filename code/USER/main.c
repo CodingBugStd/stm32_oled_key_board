@@ -32,9 +32,8 @@ int main(void)
 	OLED12864_Init();				//OLED初始化			需要SPI支持
 	tmp[0] = W25_Flash_Init();		//W25Q64外扩FLASH初始化	需要SPI支持
 	tmp[1] = DS18B20_Init();		//温度传感器初始化		需要硬件延时支持
-	if(tmp[0]==0 && tmp[1]==0)
-		OLED12864_Show_String(0,0,"Deviece Is Correct",1);
-	OLED12864_Refresh();
+
+	Test();
 
 	while(1)
 	{

@@ -66,68 +66,45 @@ uint8_t Read_Status1(void)
     return temp;
 }
 
-void W25_WakeUp(void)
-{
-    W25_CS_Set;
-    W25_CS_Reset;
-    W25_Send(W25_Release);
-    W25_CS_Set;
-    soft_delay_ms(1);
-}
-
 #include "oled12864.h"
 #include <stdio.h>
 
 uint8_t Test(void)
 {
-    W25_WakeUp();
     Write_Enable();
-    W25_CS_Set;
     W25_CS_Reset;
-    W25_Send(W25_Chip_Erase);
+    W25_Send(0x20);
+    W25_Send(0x00);
+    W25_Send(0x00);
+    W25_Send(0x00);
     W25_CS_Set;
-    W25_WaitBusy();
-
-    W25_CS_Set;
-    W25_CS_Reset;
-    W25_Send(W25_ReadData);
-    W25_Send(0x01);
-    W25_Send(0x12);
-    W25_Send(0x12);
-    OLED12864_Show_Num(0,0,W25_Send(0xff),1);
-    OLED12864_Show_Num(1,0,W25_Send(0xff),1);
-    OLED12864_Show_Num(2,0,W25_Send(0xff),1);
-    OLED12864_Show_Num(3,0,W25_Send(0xff),1);
-    W25_CS_Set;
-    W25_WaitBusy();
-
-    W25_CS_Set;
+    while(Read_Status1() & 0x01 == 0x01);
+    
     W25_CS_Reset;
     W25_Send(W25_Page_Write);
-    W25_Send(0x01);
-    W25_Send(0x12);
-    W25_Send(0x12);
-    W25_Send(0xab);
-    W25_Send(0xab);
-    W25_Send(0xab);
-    W25_Send(0xab);
+    W25_Send(0x00);
+    W25_Send(0x00);
+    W25_Send(0x00);
+    for(uint16_t a=0;a<300;a++)
+        W25_Send(0x12);
     W25_CS_Set;
-    W25_WaitBusy();
+    while(Read_Status1() & 0x01 == 0x01);
 
-    W25_CS_Set;
     W25_CS_Reset;
     W25_Send(W25_ReadData);
-    W25_Send(0x01);
-    W25_Send(0x12);
-    W25_Send(0x12);
+    W25_Send(0x00);
+    W25_Send(0x00);
+    W25_Send(0x00);
     OLED12864_Show_Num(0,0,W25_Send(0xff),1);
     OLED12864_Show_Num(1,0,W25_Send(0xff),1);
     OLED12864_Show_Num(2,0,W25_Send(0xff),1);
     OLED12864_Show_Num(3,0,W25_Send(0xff),1);
+    OLED12864_Show_Num(4,0,W25_Send(0xff),1);
+    OLED12864_Show_Num(5,0,W25_Send(0xff),1);
+    OLED12864_Show_Num(6,0,W25_Send(0xff),1);
+    OLED12864_Show_Num(7,0,W25_Send(0xff),1);
     W25_CS_Set;
-    W25_WaitBusy();
-
     OLED12864_Refresh();
-
+    Write_Disable();
     return 0;
 }
