@@ -20,7 +20,7 @@
 *************************************************/
 
 #define Rx_SbufferSize  128
-#define Tx_SbufferSize  24
+#define Tx_SbufferSize  72
 
 //每行第一个元素表示该缓存区存放的数据个数
 static uint8_t USART_Rx_Sbuffer[2][Rx_SbufferSize + 1] = {{0},{0}};

@@ -1,9 +1,9 @@
 #include "w25_flash.h"
 
-#define W25_WaitBusy()  while(Read_Status1() & 0x01 == 0x01)    
-
-static void Write_Enable(void);     //写使能
-static void Write_Disable(void);    //写失能
+static void Wait_Busy(void);
+static void Write_Enable(void);         //写使能
+static void Write_Disable(void);        //写失能
+static void Send_Addr(uint32_t Addr);   //发送24位地址
 static uint8_t Read_Status1(void);  //读状态寄存器1
 
 uint8_t W25_Flash_Init(void)
@@ -36,6 +36,11 @@ uint8_t W25_Flash_Init(void)
        return 1;
 }
 
+void Wait_Busy(void)
+{
+    while(Read_Status1() & 0x01 == 0x01);
+}
+
 void Write_Enable(void)
 {
     //产生下降沿
@@ -66,6 +71,13 @@ uint8_t Read_Status1(void)
     return temp;
 }
 
+void Send_Addr(uint32_t Addr)
+{
+    W25_Send((uint8_t)((Addr)>>16));
+    W25_Send((uint8_t)((Addr)>>8));
+    W25_Send((uint8_t)Addr);
+}
+
 void W25_WakeUp(void)
 {
     W25_CS_Set;
@@ -75,59 +87,55 @@ void W25_WakeUp(void)
     soft_delay_ms(1);
 }
 
-#include "oled12864.h"
-#include <stdio.h>
-
-uint8_t Test(void)
+void W25_Erase_Sector(uint32_t Addr)
 {
-    W25_WakeUp();
+    Wait_Busy();
     Write_Enable();
-    W25_CS_Set;
     W25_CS_Reset;
-    W25_Send(W25_Chip_Erase);
+    W25_Send(W25_Sector_Erase);     //扇区擦除
+    Send_Addr(Addr&0xFFF000);       //取扇区头地址
     W25_CS_Set;
-    W25_WaitBusy();
+}
 
-    W25_CS_Set;
-    W25_CS_Reset;
-    W25_Send(W25_ReadData);
-    W25_Send(0x01);
-    W25_Send(0x12);
-    W25_Send(0x12);
-    OLED12864_Show_Num(0,0,W25_Send(0xff),1);
-    OLED12864_Show_Num(1,0,W25_Send(0xff),1);
-    OLED12864_Show_Num(2,0,W25_Send(0xff),1);
-    OLED12864_Show_Num(3,0,W25_Send(0xff),1);
-    W25_CS_Set;
-    W25_WaitBusy();
-
-    W25_CS_Set;
-    W25_CS_Reset;
-    W25_Send(W25_Page_Write);
-    W25_Send(0x01);
-    W25_Send(0x12);
-    W25_Send(0x12);
-    W25_Send(0xab);
-    W25_Send(0xab);
-    W25_Send(0xab);
-    W25_Send(0xab);
-    W25_CS_Set;
-    W25_WaitBusy();
-
-    W25_CS_Set;
+void W25_Read_Data(uint8_t*buf,uint32_t Addr,uint16_t len)
+{
+    Wait_Busy();
     W25_CS_Reset;
     W25_Send(W25_ReadData);
-    W25_Send(0x01);
-    W25_Send(0x12);
-    W25_Send(0x12);
-    OLED12864_Show_Num(0,0,W25_Send(0xff),1);
-    OLED12864_Show_Num(1,0,W25_Send(0xff),1);
-    OLED12864_Show_Num(2,0,W25_Send(0xff),1);
-    OLED12864_Show_Num(3,0,W25_Send(0xff),1);
+    Send_Addr(Addr);
+    for(uint16_t temp=0;temp<len;temp++)
+    {
+        *buf = W25_Send(0xFF);
+        buf++;
+    }
     W25_CS_Set;
-    W25_WaitBusy();
+}
 
-    OLED12864_Refresh();
+void W25_Write_Page(uint8_t*buf,uint32_t Addr,uint16_t len)
+{
+    Wait_Busy();
+    Write_Enable();
+    W25_CS_Reset;
+    W25_Send(W25_PageProgram);
+    Send_Addr(Addr&0xFFFF00);     //取页首地址
+    for(uint16_t temp=0;temp<len;temp++)
+    {
+        W25_Send(*buf);
+        buf++;
+    }
+    W25_CS_Set;
+}
 
-    return 0;
+#include "oled12864.h"
+#include "bsp_usart.h"
+
+void Test(void)
+{
+    uint8_t buff[64];
+    uint8_t a[64];
+    for(uint8_t temp=0;temp<64;temp++)
+        a[temp] = temp;
+    W25_Write_Page(a,0x7F0000,64);
+    W25_Read_Data(buff,0x7F0000,64);
+    Usart_Send(1,buff,64);
 }
